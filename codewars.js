@@ -98,3 +98,146 @@ function sum(num) {
 
     return ways[num];
 }
+
+// ==================================================================
+// Conway's Game of Life - Unlimited Edition
+// ==================================================================
+// Game Rules:
+    // 1. Any live cell with fewer than two live neighbours dies (underpopulation).
+    // 2. Any live cell with two or three live neighbours lives on to the next generation.
+    // 3. Any live cell with more than three live neighbours dies (overpopulation).
+    // 4. Any dead cell with exactly three live neighbours becomes a live cell (reproduction).
+function getGeneration(cells, generations) {
+    // Count live neighbors for a cell
+    function countNeighbors(grid, row, col) {
+        let count = 0;
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                if (i === 0 && j === 0) continue; // Skip the cell
+                const newRow = row + i;
+                const newCol = col + j;
+                if (newRow >= 0 && newRow < grid.length && newCol >= 0 && newCol < grid[0].length) {
+                    count += grid[newRow][newCol];
+                }
+            }
+        }
+        return count;
+    }
+    // Expand grid by 1 cell in all directions
+    function expandGrid(grid) {
+        const width = grid[0].length + 2;
+        const expanded = [new Array(width).fill(0)];
+        for (const row of grid) {
+            expanded.push([0, ...row, 0]);
+        }
+        expanded.push(new Array(width).fill(0));
+        return expanded;
+    }
+    // Trim empty rows/colimns from edges
+    function trimGrid(grid) {
+        // Remove empty top rows
+        while (grid.length > 0 && grid[0].every(cell => cell === 0)) {
+            grid.shift();
+        }
+        // Remove empty bottom rows
+        while (grid.length > 0 && grid[grid.length - 1].every(cell => cell === 0)) {
+            grid.pop();
+        }
+        if (grid.length === 0) return [[]]; // All cells are dead
+
+        // First & last empty cells (left/right of grid)
+        let minCol = grid[0].length, maxCol = -1;
+        for (const row of grid) {
+            for (let col = 0; col < row.length; col++) {
+                if (row[col] === 1) {
+                    minCol = Math.min(minCol, col);
+                    maxCol = Math.max(maxCol, col);
+                }
+            }
+        }
+        if (maxCol === -1) return [[]]; // All cells are dead
+        return grid.map(row => row.slice(minCol, maxCol + 1));
+    }
+    // Main Simulation loop
+    let grid = cells;
+    for (let gen = 0; gen < generations; gen++) {
+        grid = expandGrid(grid);
+        const next = grid.map(row => [...row]); // Deep copy
+        for (let i = 0; i < grid.length; i++) {
+            for (let j = 0; j < grid[0].length; j++) {
+                const neighbors = countNeighbors(grid, i, j);
+                if (grid[i][j] === 1) {
+                    // Live cell rules
+                    next[i][j] = (neighbors === 2 || neighbors === 3) ? 1 : 0;
+                } else {
+                    // Dead cell rules
+                    next[i][j] = (neighbors === 3) ? 1 : 0;
+                }
+            }
+        }
+        grid = trimGrid(next);
+    }
+    return grid;
+}
+// ==================================================================
+// Palindrome For Your Dome
+// ==================================================================
+function palindrome(string) {
+    // Normalize the string: remove non-alphanumeric and convert to lowercase
+    const normalized = string.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const reversed = normalized.split('').reverse().join('');
+    return normalized === reversed;
+}
+// ==================================================================
+// Decimals or Groups of Thousands??
+// ==================================================================
+// Example test
+// (["1,234.34", "1.324,2", "14"], "2,572.54")
+// (["4.44", "8", "14,56"], "27.00")
+function sumUpNumbers(arr) {
+    let total = 0;
+    for (const str of arr) {
+        // Count occurrences of each separator
+        const commaCount = (str.match(/,/g) || []).length;
+        const dotCount = (str.match(/\./g) || []).length;
+        const commaIndex = str.lastIndexOf(',');
+        const dotIndex = str.lastIndexOf('.');
+        let normalized;
+
+        if (commaCount > 0 && dotCount > 0) {
+            // Both present: the LAST one is the decimal separator
+            if (commaIndex > dotIndex) {
+                normalized = str.replace(/\./g, '').replace(',', '.');
+            } else {
+                normalized = str.replace(/,/g, '');
+            }
+        } else if (commaCount > 1) {
+            // Multiple commas = thousands separators (no decimal)
+            normalized = str.replace(/,/g, '');
+        } else if (dotCount > 1) {
+            // Multiple dots = thousands separators (no decimal)
+            normalized = str.replace(/\./g, '');
+        } else if (commaCount === 1) {
+            const digitsAfter = str.length - commaIndex - 1;
+            if (digitsAfter === 3) {
+                normalized = str.replace(',', '');
+            } else {
+                normalized = str.replace(',', '.');
+            }
+        } else if (dotCount === 1) {
+            const digitsAfter = str.length - dotIndex - 1;
+            if (digitsAfter === 3) {
+                normalized = str.replace('.', '');
+            } else {
+                normalized = str;
+            }
+        } else {
+            normalized = str;
+        }
+        total += parseFloat(normalized);
+    }
+    return total.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
